@@ -129,15 +129,18 @@ wss.on('connection', (ws, req) => {
     let streamSid = null;
     let geminiReady = false;
     let audioBuffer = [];
+    let callerNumber = 'número desconocido';
+    let geminiWsOpen = false;
+    let twilioStartReceived = false;
 
     const geminiWs = new WebSocket(
         `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`
     );
 
-    /* ---------------- Gemini OPEN ---------------- */
+    const initializeGemini = () => {
+        if (!geminiWsOpen || !twilioStartReceived) return;
 
-    geminiWs.on('open', () => {
-        console.log('🤖 Gemini conectado');
+        console.log(`🚀 Inicializando Gemini para: ${callerNumber}`);
 
         geminiWs.send(JSON.stringify({
             setup: {
@@ -160,8 +163,9 @@ Por lo cual si te piden cita en horas fuera de ese rango, deberás decir que en 
 - Interrupciones: Si el usuario te interrumpe, para de hablar inmediatamente y escúchale.
 - Si el usuario dice que quiere hablar con un humano, o pásame con José Luis, o deduces que no quiere hablar contigo, llama inmediatamente a la tool 'transfer_call'.
 
-## CONTEXTO TEMPORAL
+## CONTEXTO TEMPORAL Y DEL CLIENTE
 Fecha y hora actual: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}.
+Número del cliente: ${callerNumber}.
 *Nota para la IA: Si el usuario pide cita para "mañana", "pasado mañana" o "el próximo martes", calcula la fecha exacta basándote en la hora actual.*
 
 ## FLUJO DE CONVERSACIÓN (LÓGICA DE VOZ)
@@ -267,11 +271,21 @@ Herramienta: \`transfer_call\`
         }));
 
         // Keep alive
-        setInterval(() => {
+        const keepAliveInterval = setInterval(() => {
             if (geminiWs.readyState === WebSocket.OPEN) {
                 geminiWs.ping();
             }
         }, 20000);
+
+        geminiWs.on('close', () => clearInterval(keepAliveInterval));
+    };
+
+    /* ---------------- Gemini OPEN ---------------- */
+
+    geminiWs.on('open', () => {
+        console.log('🤖 Conexión con Gemini abierta');
+        geminiWsOpen = true;
+        initializeGemini();
     });
 
     /* ---------------- Gemini MESSAGE ---------------- */
@@ -398,6 +412,11 @@ Herramienta: \`transfer_call\`
 
         if (msg.event === 'start') {
             streamSid = msg.start.streamSid;
+            callerNumber = msg.start.customParameters?.callerNumber || 'número desconocido';
+            console.log(`📞 Llamada iniciada: SID=${streamSid}, Número=${callerNumber}`);
+
+            twilioStartReceived = true;
+            initializeGemini();
         }
 
         if (msg.event === 'media' && geminiReady) {
