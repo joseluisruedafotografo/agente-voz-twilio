@@ -5,8 +5,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const express = require('express');
-
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 const server = http.createServer(app);
