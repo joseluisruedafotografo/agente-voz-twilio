@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+app.use(express.urlencoded({ extended: false }));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
@@ -129,7 +130,11 @@ wss.on('connection', (ws, req) => {
     let streamSid = null;
     let geminiReady = false;
     let audioBuffer = [];
-    let callerNumber = 'número desconocido';
+    
+    // Captura inicial desde URL (si existe)
+    const urlParams = new URL(req.url, `http://${req.headers.host}`);
+    let callerNumber = urlParams.searchParams.get('caller') || 'número desconocido';
+    
     let geminiWsOpen = false;
     let twilioStartReceived = false;
 
@@ -412,7 +417,12 @@ Herramienta: \`transfer_call\`
 
         if (msg.event === 'start') {
             streamSid = msg.start.streamSid;
-            callerNumber = msg.start.customParameters?.callerNumber || 'número desconocido';
+            
+            // Si no llegó por URL, intentamos capturarlo por parámetros
+            if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
+                callerNumber = msg.start.customParameters.callerNumber;
+            }
+
             console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
             console.log(`📞 Llamada iniciada: SID=${streamSid}, Número=${callerNumber}`);
             
