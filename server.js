@@ -413,8 +413,9 @@ Herramienta: \`transfer_call\`
         if (msg.event === 'start') {
             streamSid = msg.start.streamSid;
             callerNumber = msg.start.customParameters?.callerNumber || 'número desconocido';
+            console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
             console.log(`📞 Llamada iniciada: SID=${streamSid}, Número=${callerNumber}`);
-
+            
             twilioStartReceived = true;
             initializeGemini();
         }
