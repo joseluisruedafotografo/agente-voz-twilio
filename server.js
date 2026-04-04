@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const express = require('express');
+
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 const server = http.createServer(app);
@@ -103,8 +105,15 @@ function pcm16ToMulaw(pcmBuffer) {
    🌐 TWILIO WEBHOOK
 ========================================================= */
 
+
+
 app.post('/twilio-webhook', (req, res) => {
     // Captura desde el cuerpo del POST de Twilio
+    // 1. Imprimir todo el cuerpo de la petición en la consola
+    console.log("=== DATOS RECIBIDOS DE TWILIO HTTP ===");
+    console.log(req.body);
+    console.log("======================================");
+
     const callerNumber = req.body.From || 'número desconocido';
     console.log(`🌍 WEBHOOK RECIBIDO: Llamada entrante desde ${callerNumber}`);
 
@@ -137,11 +146,11 @@ wss.on('connection', (ws, req) => {
     let streamSid = null;
     let geminiReady = false;
     let audioBuffer = [];
-    
+
     // Captura inicial desde URL (si existe)
     const urlParams = new URL(req.url, `http://${req.headers.host}`);
     let callerNumber = urlParams.searchParams.get('caller') || 'número desconocido';
-    
+
     let geminiWsOpen = false;
     let twilioStartReceived = false;
 
@@ -424,7 +433,7 @@ Herramienta: \`transfer_call\`
 
         if (msg.event === 'start') {
             streamSid = msg.start.streamSid;
-            
+
             // Si no llegó por URL, intentamos capturarlo por parámetros
             if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
                 callerNumber = msg.start.customParameters.callerNumber;
@@ -432,7 +441,7 @@ Herramienta: \`transfer_call\`
 
             console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
             console.log(`📞 Llamada iniciada: SID=${streamSid}, Número=${callerNumber}`);
-            
+
             twilioStartReceived = true;
             initializeGemini();
         }
