@@ -104,13 +104,20 @@ function pcm16ToMulaw(pcmBuffer) {
 ========================================================= */
 
 app.post('/twilio-webhook', (req, res) => {
-    const wssUrl = `wss://${req.headers.host}/media-stream`;
+    // Captura desde el cuerpo del POST de Twilio
+    const callerNumber = req.body.From || 'número desconocido';
+    console.log(`🌍 WEBHOOK RECIBIDO: Llamada entrante desde ${callerNumber}`);
+
+    const host = req.headers.host;
+    const wssUrl = `wss://${host}/media-stream?caller=${encodeURIComponent(callerNumber)}`;
 
     const twiml = `
 <Response>
 <Say language="es-ES">Conectando con inteligencia artificial...</Say>
 <Connect>
-<Stream url="${wssUrl}" />
+<Stream url="${wssUrl}">
+  <Parameter name="callerNumber" value="${callerNumber}" />
+</Stream>
 </Connect>
 </Response>`;
 
