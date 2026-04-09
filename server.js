@@ -76,15 +76,20 @@ function upsample8kTo16k(pcm8k) {
     return out;
 }
 
-// Downsample 24kHz → 8kHz (simple 3:1 decimation)
+// Downsample 24kHz → 8kHz con promediado (Anti-aliasing rudimentario)
 function downsample24kTo8k(pcm24k) {
     const numSamplesIn = Math.floor(pcm24k.length / 2);
     const numSamplesOut = Math.floor(numSamplesIn / 3);
     const out = Buffer.alloc(numSamplesOut * 2);
 
     for (let i = 0; i < numSamplesOut; i++) {
-        const sample = pcm24k.readInt16LE(i * 6);
-        out.writeInt16LE(sample, i * 2);
+        // Promediar 3 muestras consecutivas para suavizar las altas frecuencias
+        const s1 = pcm24k.readInt16LE((i * 3) * 2);
+        const s2 = pcm24k.readInt16LE((i * 3 + 1) * 2);
+        const s3 = pcm24k.readInt16LE((i * 3 + 2) * 2);
+
+        const avg = Math.round((s1 + s2 + s3) / 3);
+        out.writeInt16LE(avg, i * 2);
     }
     return out;
 }
@@ -359,71 +364,47 @@ Herramienta: \`transfer_call\`
 
         // INTERCEPTAR LLAMADAS A HERRAMIENTAS (TOOL CALLS)
         if (msg.toolCall) {
-            console.log('🛠️ [TOOL CALL] Gemini solicitó agendar:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
+            console.log('🛠️ [TOOL CALL] Gemini solicitó:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
 
-            const functionCalls = msg.toolCall.functionCalls;
-
-            // Usamos una función asíncrona autoejecutable para poder usar "await" con n8n
             (async () => {
-                const functionResponses = [];
+                const functionCalls = msg.toolCall.functionCalls;
 
-                for (const call of functionCalls) {
+                // Mapeamos las llamadas a un array de promesas concurrentes
+                const promises = functionCalls.map(async (call) => {
                     const args = call.args;
+                    let dataParaGemini = { status: "error", message: "Timeout o fallo en el servidor" };
 
-                    if (call.name === 'identificarCliente') {
-                        console.log(`[TOOL] Buscar/Actualizar Cliente:`, args);
-                        // URL N8N PARA IDENTIFICAR AL CLIENTE
-                        const WEBHOOK_IDENTIFICAR = 'https://n8n.ruedia.space/webhook/identificador_cliente';
+                    // AbortController para evitar que Gemini se quede colgado si n8n tarda > 5 segundos
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                        let dataParaGemini = { message: "Cliente no encontrado. Debes pedirle los demás datos." };
-                        try {
-                            const res = await fetch(WEBHOOK_IDENTIFICAR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+                    try {
+                        let webhookUrl = '';
+                        if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
+                        else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/retell_reservas';
+                        else if (call.name === 'transfer_call') webhookUrl = 'https://tu-n8n-url.com/webhook/transferir-llamada';
+
+                        if (webhookUrl) {
+                            const res = await fetch(webhookUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(args),
+                                signal: controller.signal
+                            });
                             const text = await res.text();
-                            console.log('✅ n8n (identificar) respondió:', text);
                             dataParaGemini = { respuestaN8N: text };
-                        } catch (e) {
-                            console.error('❌ Error n8n (identificar):', e);
                         }
-
-                        functionResponses.push({ id: call.id, name: call.name, response: { result: dataParaGemini } });
+                    } catch (e) {
+                        console.error(`❌ Error en n8n para ${call.name}:`, e.message);
+                    } finally {
+                        clearTimeout(timeoutId);
                     }
 
-                    if (call.name === 'checkAvailability') {
-                        console.log(`[TOOL] Agendando Cita (checkAvailability):`, args);
-                        // TU URL ACTUAL PARA GUARDAR LA RESERVA
-                        const WEBHOOK_RESERVA = 'https://n8n.ruedia.space/webhook/retell_reservas';
+                    return { id: call.id, name: call.name, response: { result: dataParaGemini } };
+                });
 
-                        let dataParaGemini = { status: "success", respuestaServidor: "Consulta de reserva enviada con éxito." };
-                        try {
-                            const res = await fetch(WEBHOOK_RESERVA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
-                            const text = await res.text();
-                            console.log('✅ n8n (reserva) respondió:', text);
-                            dataParaGemini = { respuestaN8N: text };
-                        } catch (e) {
-                            console.error('❌ Error n8n (reserva):', e);
-                        }
-
-                        functionResponses.push({ id: call.id, name: call.name, response: { result: dataParaGemini } });
-                    }
-
-                    if (call.name === 'transfer_call') {
-                        console.log(`[TOOL] Transfiriendo llamada...`);
-                        // URL N8N PARA GESTIONAR EL DESVÍO DE LLAMADA
-                        const WEBHOOK_TRANSFERIR = 'https://tu-n8n-url.com/webhook/transferir-llamada';
-
-                        let dataParaGemini = { status: "success", message: "Procediendo a transferir. Despídete del cliente por ahora." };
-                        try {
-                            const res = await fetch(WEBHOOK_TRANSFERIR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
-                            const text = await res.text();
-                            console.log('✅ n8n (transferir) respondió:', text);
-                            dataParaGemini = { respuestaN8N: text };
-                        } catch (e) {
-                            console.error('❌ Error n8n (transferir):', e);
-                        }
-
-                        functionResponses.push({ id: call.id, name: call.name, response: { result: dataParaGemini } });
-                    }
-                }
+                // Ejecutar todas las llamadas a n8n al mismo tiempo
+                const functionResponses = await Promise.all(promises);
 
                 if (functionResponses.length > 0) {
                     geminiWs.send(JSON.stringify({
