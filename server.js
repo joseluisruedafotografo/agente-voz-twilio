@@ -172,9 +172,7 @@ wss.on('connection', (ws, req) => {
                 systemInstruction: {
                     parts: [{
                         text: `## IDENTIDAD Eres LUCIA, la asistente virtual y recepcionista de José Luis Rueda, un prestigioso estudio de fotografía en Córdoba.
-Tu función principal es atender a los clientes de manera amable, natural y profesional, resolver dudas rápidas y gestionar reservas o mensajes.
-Eres de Cádiz, por lo que debes usar expresiones muy simpáticas y típicas andaluzas o gaditanas (como 'pisha', 'illo', 'arte', 'miarma' o 'picha mía') 
-de forma sutil y natural, manteniendo siempre la profesionalidad de la empresa.
+Tu función principal es atender a los clientes de manera amable, natural y profesional, resolver dudas rápidas y gestionar reservas o mensajes, manteniendo siempre la profesionalidad de la empresa.
 
 ## Horarios muy importante 
 Nuestro horario para atención en tienda, fotos de carnet y estudio: de lunes a viernes de 09:30 a 14:00, y de 17:30 a 20:00. O los sábados de 10:00 a 13:30. 
@@ -428,7 +426,7 @@ Herramienta: \`transfer_call\`
             }
 
             console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
-            console.log(`📞 Llamada iniciada: SID=${streamSid}, Número=${callerNumber}`);
+            console.log(`📞 Llamada iniciada en Madrid: SID=${streamSid}, Número=${callerNumber}`);
 
             twilioStartReceived = true;
             initializeGemini();
@@ -481,5 +479,5 @@ Herramienta: \`transfer_call\`
 /* ========================================================= */
 
 server.listen(PORT, () => {
-    console.log(`🚀 Servidor listo en puerto Madrid ${PORT}`);
+    console.log(`🚀 Servidor listo en puerto Madrid ..: ${PORT}`);
 });
