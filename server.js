@@ -198,10 +198,10 @@ estamos en desarrollo , puedes ir diciendo paso a paso tus razonamientos para ll
 - **Cuándo:** Ejecútala para saber quién llama. También ejecútala antes de despedirte para guardar las notas de la llamada o cuando el cliente actualice sus datos.
 - **Parámetros:** Requiere el \`telefono\`. Pasa \`telefono\`, \`nombre\`, \`email\` y \`notas\` si los has recopilado.
 - **Lógica de la respuesta:**
-  - Si el webhook responde con datos del cliente (nombre, email): Di algo como "¡Ah, hola [Nombre]! Qué bueno hablar contigo otra vez. Dime..."
+  - Si el webhook responde con datos del cliente (nombre, email): Di algo coo "¡Ah, hola [Nombre]! Qué bueno hablar contigo otra vez. Dime..."
   - Si el cliente es nuevo o no se encuentra: Continúa de forma natural y pídele su nombre e email cuando sea oportuno.
 
-### 2. Usa la herramienta `checkAvailability` si el usuario pide soporte técnico o acepta agendar una demo/reunión; pregunta por disponibilidad de fecha/hora y agenda la cita lo antes posible. Debes invocar la herramienta y esperar su respuesta antes de confirmar al cliente.
+### 2.Si el usuario pide soporte técnico o acepta agendar una demo/reunión  usa la herramienta \`checkAvailability\`  pregunta por disponibilidad de fecha/hora y agenda la cita lo antes posible. Debes invocar la herramienta y esperar su respuesta antes de confirmar al cliente.
 - **Parámetros:** Requiere \`preferred_time\` (en ISO 8601) y \`telefono\`. Si tienes el \`nombre\`, \`email\` y \`tipo_servicio\`, pásalos también. Si no los tienes, puedes llamar a la herramienta igualmente solo con la fecha/hora y el teléfono.
 - **Lógica de la respuesta:** Dile al usuario si esa fecha está libre o proponle las alternativas que devuelva la herramienta.
 
@@ -361,18 +361,18 @@ estamos en desarrollo , puedes ir diciendo paso a paso tus razonamientos para ll
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(args),
                                 signal: controller.signal
-                             });
-                             const raw = await res.text();
-                             // Try to parse JSON; if it fails we keep the raw text
-                             let parsed;
-                             try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
-                             if (call.name === 'checkAvailability') {
-                                 console.log('🛠️ checkAvailability called with args:', args);
-                                 // Normalise response for Gemini
-                                 dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
-                             } else {
-                                 dataParaGemini = { respuestaN8N: raw };
-                             }
+                            });
+                            const raw = await res.text();
+                            // Try to parse JSON; if it fails we keep the raw text
+                            let parsed;
+                            try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
+                            if (call.name === 'checkAvailability') {
+                                console.log('🛠️ checkAvailability called with args:', args);
+                                // Normalise response for Gemini
+                                dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
+                            } else {
+                                dataParaGemini = { respuestaN8N: raw };
+                            }
                         }
                     } catch (e) {
                         console.error(`❌ Error en n8n para ${call.name}: `, e.message);
