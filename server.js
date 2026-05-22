@@ -125,7 +125,7 @@ app.post('/twilio-webhook', (req, res) => {
 
     const twiml = `
 <Response>
-<Say language="es-ES">Conectando con PlatoReel.com .</Say>
+<Say language="es-ES">Conectando con PlatoRil.com .</Say>
 <Connect>
 <Stream url="${wssUrl}">
   <Parameter name="callerNumber" value="${callerNumber}" />
