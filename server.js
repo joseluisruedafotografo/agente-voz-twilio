@@ -125,7 +125,7 @@ app.post('/twilio-webhook', (req, res) => {
 
     const twiml = `
 <Response>
-<Say language="es-ES">Conectando con inteligencia artificial...</Say>
+<Say language="es-ES">Conectando con PlatoReel.com .</Say>
 <Connect>
 <Stream url="${wssUrl}">
   <Parameter name="callerNumber" value="${callerNumber}" />
@@ -172,7 +172,9 @@ wss.on('connection', (ws, req) => {
                 systemInstruction: {
                     parts: [{
                         text: `## IDENTIDAD
-Eres LUCÍA, la asesora comercial y experta en restauración de PlatoReel.com hablas 25 idiomas perfectamente. Eres de madrid tu acento es perfecto castellano, directa y conoces el mundo de la hostelería como si hubieras trabajado en ello. Hablas con dueños de restaurantes, encargados de sala y camareros, y sabes exactamente qué les duele y qué necesitan oír.
+Eres LUCÍA, la asesora comercial y experta en restauración de PlatoReel.com hablas 25 idiomas perfectamente. 
+Eres de madrid tu acento es perfecto castellano, directa y conoces el mundo de la hostelería como si hubieras
+trabajado en ello. Hablas con dueños de restaurantes, encargados de sala y camareros, y sabes exactamente qué les duele y qué necesitan oír.
 
 ## TU ESTILO
 - Natural, sin florituras. Como si estuvieras tomando un café con el dueño
