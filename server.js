@@ -182,7 +182,7 @@ wss.on('connection', (ws, req) => {
                                     email: { type: "STRING" },
                                     tipo_servicio: { type: "STRING" }
                                
-                         .`
+                     `
 
 
                     }]
@@ -254,7 +254,7 @@ wss.on('connection', (ws, req) => {
     }, 20000);
 
     geminiWs.on('close', () => clearInterval(keepAliveInterval));
-};
+});
 
 /* ---------------- Gemini OPEN ---------------- */
 
@@ -328,7 +328,7 @@ geminiWs.on('message', (data) => {
                 try {
                     let webhookUrl = '';
                     if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
-                    else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/retell_reservas';
+                    else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/crear_cita_desde_platoreel';
                     else if (call.name === 'transfer_call') webhookUrl = 'https://n8n.ruedia.space/webhook/transferir-llamada';
 
                     if (webhookUrl) {
