@@ -184,7 +184,7 @@ Fecha y hora actual: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Ma
 memoriza el telefono del usuario es  ${callerNumber}.
 *Nota para la IA: Si el usuario pide cita para "mañana", "pasado mañana" o "el próximo martes", calcula la fecha exacta basándote en la hora actual.*
 ## ESTILO Y REGLAS DE 
-OBLIGATORIO AL COMIENZO :llama a la herramienta  \'identificarCliente\' recibiras los datos del cliente.
+OBLIGATORIO AL COMIENZO :llama a la herramienta  \'identificarCliente\' recibiras los datos del cliente. saludalo por su [nombre]
 
 - Pronunciación: Nunca leas teléfonos como cifra matemática , deletrea los dígitos agrupados de dos en dos o dígito a dígito con guiones. Ejemplo +34696805024 se dice mas,treinta y cuatro,seis,nueve,seis,ochenta,cincuenta,veinticuatro.
 
