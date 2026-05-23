@@ -254,11 +254,10 @@ wss.on('connection', (ws, req) => {
     }, 20000);
 
     geminiWs.on('close', () => clearInterval(keepAliveInterval));
-});
 
-/* ---------------- Gemini OPEN ---------------- */
+    /* ---------------- Gemini OPEN ---------------- */
 
-geminiWs.on('open', () => {
+    geminiWs.on('open', () => {
     console.log('🤖 Conexión con Gemini abierta');
     geminiWsOpen = true;
     initializeGemini();
@@ -421,6 +420,8 @@ ws.on('message', (message) => {
 
 /* ---------------- CLEANUP ---------------- */
 
+/* ---------------- CLEANUP ---------------- */
+
 ws.on('close', () => {
     console.log('📴 Llamada terminada');
     geminiWs.close();
@@ -434,6 +435,8 @@ geminiWs.on('error', (e) => {
     console.error('❌ Gemini error:', e);
 });
 });
+
+/* ========================================================= */
 
 /* ========================================================= */
 
