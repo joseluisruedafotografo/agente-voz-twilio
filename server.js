@@ -236,7 +236,7 @@ estamos en desarrollo , puedes ir diciendo paso a paso tus razonamientos para ll
                         },
                         {
                             name: "checkAvailability",
-                            description: "Comprueba disponibilidad. Usa esto para AGENDAR la cita o revisar disponibilidad en Google Calendar.",
+                            description: " Usa esta herrramienta para AGENDAR la cita o revisar disponibilidad en Google Calendar.",
                             parameters: {
                                 type: "OBJECT",
                                 properties: {
