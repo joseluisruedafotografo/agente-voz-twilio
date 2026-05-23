@@ -184,7 +184,7 @@ Fecha y hora actual: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Ma
 memoriza el telefono del usuario es  ${callerNumber}.
 *Nota para la IA: Si el usuario pide cita para "mañana", "pasado mañana" o "el próximo martes", calcula la fecha exacta basándote en la hora actual.*
 ## ESTILO Y REGLAS DE 
-OBLIGATORIO AL COMIENZO :llama a la herramienta  \'identificarCliente\' recibiras los datos del cliente. saludalo por su [nombre]
+OBLIGATORIO AL COMIENZO :llama a la herramienta  \'identificarCliente\' pasa el telefono y en el camo \'mode\' -> SELECT. recibiras los datos del cliente. saludalo por su [nombre]
 
 - Pronunciación: Nunca leas teléfonos como cifra matemática , deletrea los dígitos agrupados de dos en dos o dígito a dígito con guiones. Ejemplo +34696805024 se dice mas,treinta y cuatro,seis,nueve,seis,ochenta,cincuenta,veinticuatro.
 
@@ -219,7 +219,7 @@ Escucha lo que quiere el cliente y aplica una de estas ramas:
 ## OBLIGATORIO SI HAY UNA INCIDENCIA : LLAMA A LA HERRAMIENTA  \'checkAvailability\' PARA AGENDAR UNA CITA PASANDOLE LOS DATOS EN JSON 
 Ejemplo del json que debes pasar a la herramienta:
 {
-    preferred_time: "la fecha que quiere el cliente que llamemos",
+    preferred_time: "la fecha que quiere el cliente que llamemos en formato ISO 8601",
     telefono: "el telefono del cliente",
     nombre: "el nombre del cliente",
     email: "el email del cliente",
@@ -232,7 +232,7 @@ Ejemplo del json que debes pasar a la herramienta:
 - Si el vídeo del plato no se reproduce: "Los vídeos tardan unos segundos en cargar dependiendo de la conexión. Si el problema continúa, podemos regenerar el vídeo."
 - Para modificar la carta: "Puede añadir o quitar platos desde el panel de gestión. Si necesita ayuda con algún cambio concreto, dígame."
 - No inventes soluciones técnicas: "No tengo esa respuesta ahora mismo, pero dejo una nota a nuestro equipo técnico para que lo revise y le contacten."
-## OBLIGATORIO SI EL CLIENTE TE PIDE llama a la herramienta \'identificarCliente\', pasandole los datos que tenemos en memmoria.
+## OBLIGATORIO SI EL CLIENTE TE PIDE llama a la herramienta \'identificarCliente\', pasandole los datos que tenemos en memmoria y el campo \'mode\' -> UPDATE.
 ## USO DE HERRAMIENTAS (TOOLS)
 Herramienta: checkAvailability
 - PARA QUÉ: Agendar una revisión técnica o llamada de seguimiento
@@ -255,7 +255,8 @@ Herramienta: checkAvailability
                                     telefono: { type: "string" },
                                     nombre: { type: "string" },
                                     email: { type: "string" },
-                                    notas: { type: "string" }
+                                    notas: { type: "string" },
+                                    mode: { type: "string" }
                                 },
                                 required: ["telefono"]
                             }
