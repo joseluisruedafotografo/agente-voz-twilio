@@ -179,7 +179,10 @@ Eres Lucía, la asistente virtual de soporte técnico de PlatoReel. Tu función 
 ## HORARIOS
 Soporte técnico disponible 24/7 
 
-
+# CONTEXTO TEMPORAL Y DEL CLIENTE
+Fecha y hora actual: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}.
+Número del cliente: ${callerNumber}.
+*Nota para la IA: Si el usuario pide cita para "mañana", "pasado mañana" o "el próximo martes", calcula la fecha exacta basándote en la hora actual.*
 ## ESTILO Y REGLAS DE ORO
 - Pronunciación: Nunca leas teléfonos como cifra matemática , deletrea los dígitos agrupados de dos en dos o dígito a dígito con guiones. Ejemplo +34696805024 se dice mas,treinta y cuatro,seis,nueve,seis,ochenta,cincuenta,veinticuatro.
 
@@ -306,182 +309,182 @@ Herramienta: checkAvailability
     /* ---------------- Gemini OPEN ---------------- */
 
     geminiWs.on('open', () => {
-    console.log('🤖 Conexión con Gemini abierta');
-    geminiWsOpen = true;
-    initializeGemini();
-});
-
-/* ---------------- Gemini MESSAGE ---------------- */
-
-geminiWs.on('message', (data) => {
-    const msg = JSON.parse(data.toString());
-
-    // LOG detallado (ignorando fragmentos de audio para no inundar la consola)
-    if (!msg.serverContent?.modelTurn?.parts?.[0]?.inlineData) {
-        console.log('\n[DEBUG Gemini API]:', JSON.stringify(msg, null, 2));
-    }
-
-    if (msg.setupComplete) {
-        geminiReady = true;
-
-        // saludo inicial
-        // saludo inicial
-        geminiWs.send(JSON.stringify({
-            clientContent: {
-                turns: [{
-                    role: "user",
-                    parts: [{ text: "Hola, acabo de llamar. Hazme un saludo corto de bienvenida." }]
-                }],
-                turnComplete: true
-            }
-        }));
-    }
-
-    if (msg.serverContent?.modelTurn?.parts) {
-        for (const part of msg.serverContent.modelTurn.parts) {
-
-            if (part.inlineData?.data && streamSid) {
-                const pcm24k = Buffer.from(part.inlineData.data, 'base64');
-
-                // ↓ convertimos a 8k para Twilio (24kHz a 8kHz)
-                const pcm8k = downsample24kTo8k(pcm24k);
-                const mulaw = pcm16ToMulaw(pcm8k);
-
-                ws.send(JSON.stringify({
-                    event: 'media',
-                    streamSid,
-                    media: { payload: mulaw.toString('base64') }
-                }));
-            }
-        }
-    }
-
-    // INTERCEPTAR LLAMADAS A HERRAMIENTAS (TOOL CALLS)
-    if (msg.toolCall) {
-        console.log('🛠️ [TOOL CALL] Gemini solicitó:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
-
-        (async () => {
-            const functionCalls = msg.toolCall.functionCalls;
-
-            // Mapeamos las llamadas a un array de promesas concurrentes
-            const promises = functionCalls.map(async (call) => {
-                const args = call.args;
-                let dataParaGemini = { status: "error", message: "Timeout o fallo en el servidor" };
-
-                // AbortController para evitar que Gemini se quede colgado si n8n tarda > 5 segundos
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                try {
-                    let webhookUrl = '';
-                    if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
-                    else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/crear_cita_desde_platoreel';
-                    else if (call.name === 'transfer_call') webhookUrl = 'https://n8n.ruedia.space/webhook/transferir-llamada';
-
-                    if (webhookUrl) {
-                        const res = await fetch(webhookUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(args),
-                            signal: controller.signal
-                        });
-                        const raw = await res.text();
-                        // Try to parse JSON; if it fails we keep the raw text
-                        let parsed;
-                        try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
-                        if (call.name === 'checkAvailability') {
-                            console.log('🛠️ checkAvailability called with args:', args);
-                            // Normalise response for Gemini
-                            dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
-                        } else {
-                            dataParaGemini = { respuestaN8N: raw };
-                        }
-                    }
-                } catch (e) {
-                    console.error(`❌ Error en n8n para ${call.name}: `, e.message);
-                } finally {
-                    clearTimeout(timeoutId);
-                }
-
-                return { id: call.id, name: call.name, response: { result: dataParaGemini } };
-            });
-
-            // Ejecutar todas las llamadas a n8n al mismo tiempo
-            const functionResponses = await Promise.all(promises);
-
-            if (functionResponses.length > 0) {
-                geminiWs.send(JSON.stringify({
-                    toolResponse: { functionResponses: functionResponses }
-                }));
-            }
-        })();
-    }
-});
-
-/* ---------------- Twilio → Gemini ---------------- */
-
-ws.on('message', (message) => {
-    const msg = JSON.parse(message);
-
-    if (msg.event === 'start') {
-        streamSid = msg.start.streamSid;
-
-        // Si no llegó por URL, intentamos capturarlo por parámetros
-        if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
-            callerNumber = msg.start.customParameters.callerNumber;
-        }
-
-        console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
-        console.log(`📞 Llamada iniciada en Madrid: SID = ${streamSid}, Número = ${callerNumber}`);
-
-        twilioStartReceived = true;
+        console.log('🤖 Conexión con Gemini abierta');
+        geminiWsOpen = true;
         initializeGemini();
-    }
+    });
 
-    if (msg.event === 'media' && geminiReady) {
-        const mulaw = Buffer.from(msg.media.payload, 'base64');
+    /* ---------------- Gemini MESSAGE ---------------- */
 
-        // μ-law → PCM 8k
-        const pcm8k = mulawToPcm16(mulaw);
+    geminiWs.on('message', (data) => {
+        const msg = JSON.parse(data.toString());
 
-        // 8k → 16k REAL
-        const pcm16k = upsample8kTo16k(pcm8k);
+        // LOG detallado (ignorando fragmentos de audio para no inundar la consola)
+        if (!msg.serverContent?.modelTurn?.parts?.[0]?.inlineData) {
+            console.log('\n[DEBUG Gemini API]:', JSON.stringify(msg, null, 2));
+        }
 
-        // buffering (~100ms)
-        audioBuffer.push(pcm16k);
+        if (msg.setupComplete) {
+            geminiReady = true;
 
-        if (audioBuffer.length >= 5) {
-            const combined = Buffer.concat(audioBuffer);
-            audioBuffer = [];
-
+            // saludo inicial
+            // saludo inicial
             geminiWs.send(JSON.stringify({
-                realtimeInput: {
-                    audio: {
-                        mimeType: "audio/pcm;rate=16000",
-                        data: combined.toString('base64')
-                    }
+                clientContent: {
+                    turns: [{
+                        role: "user",
+                        parts: [{ text: "Hola, acabo de llamar. Hazme un saludo corto de bienvenida." }]
+                    }],
+                    turnComplete: true
                 }
             }));
         }
-    }
-});
 
-/* ---------------- CLEANUP ---------------- */
+        if (msg.serverContent?.modelTurn?.parts) {
+            for (const part of msg.serverContent.modelTurn.parts) {
 
-/* ---------------- CLEANUP ---------------- */
+                if (part.inlineData?.data && streamSid) {
+                    const pcm24k = Buffer.from(part.inlineData.data, 'base64');
 
-ws.on('close', () => {
-    console.log('📴 Llamada terminada');
-    geminiWs.close();
-});
+                    // ↓ convertimos a 8k para Twilio (24kHz a 8kHz)
+                    const pcm8k = downsample24kTo8k(pcm24k);
+                    const mulaw = pcm16ToMulaw(pcm8k);
 
-geminiWs.on('close', () => {
-    console.log('🔌 Gemini desconectado');
-});
+                    ws.send(JSON.stringify({
+                        event: 'media',
+                        streamSid,
+                        media: { payload: mulaw.toString('base64') }
+                    }));
+                }
+            }
+        }
 
-geminiWs.on('error', (e) => {
-    console.error('❌ Gemini error:', e);
-});
+        // INTERCEPTAR LLAMADAS A HERRAMIENTAS (TOOL CALLS)
+        if (msg.toolCall) {
+            console.log('🛠️ [TOOL CALL] Gemini solicitó:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
+
+            (async () => {
+                const functionCalls = msg.toolCall.functionCalls;
+
+                // Mapeamos las llamadas a un array de promesas concurrentes
+                const promises = functionCalls.map(async (call) => {
+                    const args = call.args;
+                    let dataParaGemini = { status: "error", message: "Timeout o fallo en el servidor" };
+
+                    // AbortController para evitar que Gemini se quede colgado si n8n tarda > 5 segundos
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                    try {
+                        let webhookUrl = '';
+                        if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
+                        else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/crear_cita_desde_platoreel';
+                        else if (call.name === 'transfer_call') webhookUrl = 'https://n8n.ruedia.space/webhook/transferir-llamada';
+
+                        if (webhookUrl) {
+                            const res = await fetch(webhookUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(args),
+                                signal: controller.signal
+                            });
+                            const raw = await res.text();
+                            // Try to parse JSON; if it fails we keep the raw text
+                            let parsed;
+                            try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
+                            if (call.name === 'checkAvailability') {
+                                console.log('🛠️ checkAvailability called with args:', args);
+                                // Normalise response for Gemini
+                                dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
+                            } else {
+                                dataParaGemini = { respuestaN8N: raw };
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`❌ Error en n8n para ${call.name}: `, e.message);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+
+                    return { id: call.id, name: call.name, response: { result: dataParaGemini } };
+                });
+
+                // Ejecutar todas las llamadas a n8n al mismo tiempo
+                const functionResponses = await Promise.all(promises);
+
+                if (functionResponses.length > 0) {
+                    geminiWs.send(JSON.stringify({
+                        toolResponse: { functionResponses: functionResponses }
+                    }));
+                }
+            })();
+        }
+    });
+
+    /* ---------------- Twilio → Gemini ---------------- */
+
+    ws.on('message', (message) => {
+        const msg = JSON.parse(message);
+
+        if (msg.event === 'start') {
+            streamSid = msg.start.streamSid;
+
+            // Si no llegó por URL, intentamos capturarlo por parámetros
+            if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
+                callerNumber = msg.start.customParameters.callerNumber;
+            }
+
+            console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
+            console.log(`📞 Llamada iniciada en Madrid: SID = ${streamSid}, Número = ${callerNumber}`);
+
+            twilioStartReceived = true;
+            initializeGemini();
+        }
+
+        if (msg.event === 'media' && geminiReady) {
+            const mulaw = Buffer.from(msg.media.payload, 'base64');
+
+            // μ-law → PCM 8k
+            const pcm8k = mulawToPcm16(mulaw);
+
+            // 8k → 16k REAL
+            const pcm16k = upsample8kTo16k(pcm8k);
+
+            // buffering (~100ms)
+            audioBuffer.push(pcm16k);
+
+            if (audioBuffer.length >= 5) {
+                const combined = Buffer.concat(audioBuffer);
+                audioBuffer = [];
+
+                geminiWs.send(JSON.stringify({
+                    realtimeInput: {
+                        audio: {
+                            mimeType: "audio/pcm;rate=16000",
+                            data: combined.toString('base64')
+                        }
+                    }
+                }));
+            }
+        }
+    });
+
+    /* ---------------- CLEANUP ---------------- */
+
+    /* ---------------- CLEANUP ---------------- */
+
+    ws.on('close', () => {
+        console.log('📴 Llamada terminada');
+        geminiWs.close();
+    });
+
+    geminiWs.on('close', () => {
+        console.log('🔌 Gemini desconectado');
+    });
+
+    geminiWs.on('error', (e) => {
+        console.error('❌ Gemini error:', e);
+    });
 });
 
 /* ========================================================= */
