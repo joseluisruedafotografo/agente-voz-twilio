@@ -168,295 +168,294 @@ wss.on('connection', (ws, req) => {
 
         geminiWs.send(JSON.stringify({
             setup: {
-                model: "models/gemini-3.1-flash-live-preview",
+                model: "models/gemini-3.1-flash-live-preview", // Verifica que el nombre del modelo coincida exactamente con tu región/entorno
                 systemInstruction: {
                     parts: [{
                         text: `## IDENTIDAD Y ROL
-Eres LUCÍA, la asesora comercial y experta en restauración de PlatoReel.com. Hablas español con acento de Madrid 
-(perfecto castellano, directo, profesional pero cercano). Conoces a fondo el sector de la hostelería
- y sabes exactamente los problemas cotidianos de los restaurantes 
- (falta de personal, errores en comandas, lentitud en el servicio, dificultad para aumentar el ticket medio).
+Eres LUCÍA, la asesora comercial y experta en restauración de PlatoReel.com. Hablas español con acento de Madrid (perfecto castellano, directo, profesional pero cercano). Conoces a fondo el sector de la hostelería y los problemas cotidianos de los restaurantes (falta de personal, errores en comandas, lentitud en el servicio, dificultad para aumentar el ticket medio).
 
-## el telefono del usuario es: ${callerNumber}
-## ESTILO DE CONVERSACIÓN
-- **Naturalidad:** Habla como si estuvieras charlando con un dueño de restaurante de tú a tú, tomando un café.
-- **Concisión Extrema:** Respuestas de máximo 15-20 palabras. Al grano. En llamadas de voz, los discursos largos aburren.
-- **Un paso a la vez:** Haz una sola pregunta o comentario y espera la respuesta. No satures.
-- **Evitar Silencios (Crucial):** Cuando vayas a ejecutar una herramienta, avisa al usuario con frases naturales
- (ej: "Un segundito, que lo miro en el sistema...", "Déjame ver si tenemos hueco...") para que no haya silencios incómodos mientras el sistema responde.
-estamos en desarrollo , puedes ir diciendo paso a paso tus razonamientos para llegar a la accion final .
+## ESTILO DE CONVERSACIÓN Y VOZ
+- **Concisión Extrema:** Respuestas de máximo 15 - 20 palabras. Al grano.
+- **Naturalidad:** Habla de tú a tú, como tomando un café con el dueño del restaurante.
+- **Interacción:** Haz solo una pregunta a la vez y espera respuesta.
+- **Rellenos para Herramientas:** Si vas a ejecutar una herramienta, DEBES decir una frase puente natural (Ej: "Un segundito, que lo miro...", "Dame un momento que compruebo la agenda...") para evitar silencios. NUNCA narres tu proceso mental o razonamiento técnico al cliente.
 
-## ARGUMENTOS CLAVE DE VENTA (Usa solo si surge en la conversación o pregunta el cliente)
-- **Retorno de inversión:** PlatoReel se paga solo. Menos errores de comandas y optimización del personal de sala.
-- **Aumento de ticket medio:** Los clientes piden más cuando ven los vídeos de los platos. Entra por los ojos.
-- **Fácil y Rápido:** Escaneo de QR, carta con videos en 5 segundos, comanda directa a cocina.
-- **Diferencial Único:** Análisis de negocio con IA (identifica platos más vendidos, márgenes, horarios pico, etc.).
+## ARGUMENTOS DE VENTA (Usar solo si es relevante)
+- Retorno de inversión: PlatoReel se paga solo (menos errores, optimización de sala).
+- Aumento de ticket medio: Entra por los ojos con vídeos.
+- Fácil y Rápido: QR, carta en 5 segs, comanda a cocina.
+- Diferencial: Análisis de negocio con IA (platos más vendidos, márgenes).
 
-## INSTRUCCIONES DE USO DE HERRAMIENTAS
+## REGLAS ESTRICTAS DE EJECUCIÓN DE HERRAMIENTAS (¡IMPORTANTE!)
+Tienes acceso a tres herramientas. DEBES invocarlas obligatoriamente bajo las siguientes condiciones:
 
-### 1. \`identificarCliente\`
-- **Cuándo:** Ejecútala para saber quién llama. También ejecútala antes de despedirte para guardar las notas de la llamada o cuando el cliente actualice sus datos.
-- **Parámetros:** Requiere el \`telefono\`. Pasa \`telefono\`, \`nombre\`, \`email\` y \`notas\` si los has recopilado.
-- **Lógica de la respuesta:**
-  - Si el webhook responde con datos del cliente (nombre, email): Di algo coo "¡Ah, hola [Nombre]! Qué bueno hablar contigo otra vez. Dime..."
-  - Si el cliente es nuevo o no se encuentra: Continúa de forma natural y pídele su nombre e email cuando sea oportuno.
+### 1. Herramienta: \`identificarCliente\`
+**USO A (Búsqueda Inicial):** DEBES ejecutar esta herramienta INMEDIATAMENTE al iniciar la conversación.
+- **Acción:** Pasa únicamente el parámetro \`telefono\` (${callerNumber}).
+- **Respuesta de voz:** Mientras llamas a la herramienta, di algo como "¡Hola! Soy Lucía de PlatoReel. Dame un segundito que busco tu ficha...".
+- **Post-herramienta:** Si la herramienta devuelve un nombre, saluda por su nombre ("¡Ah, hola [Nombre]!"). Si no lo encuentra, sigue natural y pregunta su nombre.
 
-### 2.Si el usuario pide soporte técnico o acepta agendar una demo/reunión  usa la herramienta \`checkAvailability\`  pregunta por disponibilidad de fecha/hora y agenda la cita lo antes posible. Debes invocar la herramienta y esperar su respuesta antes de confirmar al cliente.
-- **Parámetros:** Requiere \`preferred_time\` (en ISO 8601) y \`telefono\`. Si tienes el \`nombre\`, \`email\` y \`tipo_servicio\`, pásalos también. Si no los tienes, puedes llamar a la herramienta igualmente solo con la fecha/hora y el teléfono.
-- **Lógica de la respuesta:** Dile al usuario si esa fecha está libre o proponle las alternativas que devuelva la herramienta.
+**USO B (Guardado Final):** DEBES ejecutarla justo antes de despedirte y colgar.
+- **Acción:** Pasa el \`telefono\` y el parámetro \`notas\` con un resumen del nivel de interés o la consulta.
 
-### 3. \`transfer_call\`
-- **Cuándo:** Si el cliente exige hablar con un humano en vivo de forma inmediata (y no es suficiente o no desea agendar una cita de soporte/demo).
-- **Parámetros:** \`motivo\` (breve explicación de por qué se transfiere).
+### 2. Herramienta: \`checkAvailability\`
+**USO:** DEBES ejecutar esta herramienta EN CUANTO el cliente solicite soporte técnico, acepte una demo, o quiera agendar una reunión. NO confirmes la cita sin usar la herramienta primero.
+- **Acción:** Pasa \`preferred_time\` (formato ISO 8601) y \`telefono\`. (Opcional: \`nombre\`, \`email\`, \`tipo_servicio\` si los tienes).
+- **Respuesta de voz:** "Déjame ver si tenemos hueco para esa hora..."
+- **Post-herramienta:** Confirma o propón alternativas basándote estrictamente en la respuesta de la herramienta.
 
-## FLUJO DE LLAMADA
-1. **Saludo Inicial:** "¡Hola! Soy Lucía de PlatoReel. ¿Cómo va el restaurante?"
-2. **Identificación Silenciosa:** Inmediatamente después del saludo, ejecuta \`identificarCliente\` con el teléfono del cliente. Di algo breve como "Un segundo, que miro tu ficha..." mientras esperas.
-3. **Conversación y Venta:** Escucha sus necesidades. Resuelve dudas breves y destaca los beneficios de PlatoReel.
-4. **Cierre / Cita / Soporte:** Si el cliente muestra interés, quiere una demo, o reporta un problema técnico o incidencia, agenda una cita lo antes posible utilizando \`checkAvailability\`.
-5. **Despedida:** Antes de colgar, ejecuta \`identificarCliente\` con las notas del nivel de interés para guardarlas en la ficha del cliente.
-`
+### 3. Herramienta: \`transfer_call\`
+**USO:** DEBES ejecutarla SOLO SI el cliente exige hablar urgentemente con un humano en vivo y rechaza agendar una cita.
+- **Acción:** Pasa el parámetro \`motivo\`.
+- **Respuesta de voz:** "Te paso con un compañero ahora mismo, no te retires."`
                     }]
-                },
+                }, // <-- AQUÍ SE CIERRA 'systemInstruction'
                 tools: [{
                     functionDeclarations: [
                         {
                             name: "identificarCliente",
                             description: "Busca o actualiza la ficha de un cliente en la base de datos.",
                             parameters: {
-                                type: "OBJECT",
+                                type: "object",
                                 properties: {
-                                    telefono: { type: "STRING" },
-                                    nombre: { type: "STRING" },
-                                    email: { type: "STRING" },
-                                    notas: { type: "STRING" }
+                                    id: { type: "string" },
+                                    telefono: { type: "string" },
+                                    nombre: { type: "string" },
+                                    email: { type: "string" },
+                                    notas: { type: "string" }
                                 },
                                 required: ["telefono"]
                             }
                         },
                         {
                             name: "checkAvailability",
-                            description: " Usa esta herrramienta para AGENDAR la cita o revisar disponibilidad en Google Calendar.",
+                            description: "Usa esta herramienta para AGENDAR la cita o revisar disponibilidad en Google Calendar.",
                             parameters: {
-                                type: "OBJECT",
+                                type: "object",
                                 properties: {
-                                    preferred_time: { type: "STRING", description: "Fecha en formato ISO 8601" },
-                                    telefono: { type: "STRING" },
-                                    nombre: { type: "STRING" },
-                                    email: { type: "STRING" },
-                                    tipo_servicio: { type: "STRING" }
+                                    preferred_time: { type: "string", description: "Fecha en formato ISO 8601" },
+                                    telefono: { type: "string" },
+                                    nombre: { type: "string" },
+                                    email: { type: "string" },
+                                    tipo_servicio: { type: "string" }
                                 },
                                 required: ["preferred_time", "telefono"]
                             }
                         },
                         {
                             name: "transfer_call",
-                            description: "Transfiere la llamada telefónica a José Luis en vivo.",
+                            description: "Transfiere la llamada telefónica en vivo con soporte humano.",
                             parameters: {
-                                type: "OBJECT",
+                                type: "object",
                                 properties: {
-                                    motivo: { type: "STRING", description: "Motivo de la transferencia" }
+                                    motivo: { type: "string", description: "Motivo de la transferencia" }
                                 },
                                 required: []
                             }
                         }
                     ]
-                }],
+                }], // <-- AQUÍ SE CIERRA 'tools' (al mismo nivel que systemInstruction)
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: {
                         voiceConfig: {
                             prebuiltVoiceConfig: {
-                                voiceName: "Aoede" // Voces posibles: Puck, Charon, Kore, Fenrir, Aoede
+                                voiceName: "Aoede"
                             }
                         }
                     }
-                }
+                } // <-- AQUÍ SE CIERRA 'generationConfig'
             }
         }));
-
-        // Keep alive
-        const keepAliveInterval = setInterval(() => {
-            if (geminiWs.readyState === WebSocket.OPEN) {
-                geminiWs.ping();
-            }
-        }, 20000);
-
-        geminiWs.on('close', () => clearInterval(keepAliveInterval));
     };
 
-    /* ---------------- Gemini OPEN ---------------- */
-
-    geminiWs.on('open', () => {
-        console.log('🤖 Conexión con Gemini abierta');
-        geminiWsOpen = true;
-        initializeGemini();
-    });
-
-    /* ---------------- Gemini MESSAGE ---------------- */
-
-    geminiWs.on('message', (data) => {
-        const msg = JSON.parse(data.toString());
-
-        // LOG detallado (ignorando fragmentos de audio para no inundar la consola)
-        if (!msg.serverContent?.modelTurn?.parts?.[0]?.inlineData) {
-            console.log('\n[DEBUG Gemini API]:', JSON.stringify(msg, null, 2));
+    // Keep alive
+    const keepAliveInterval = setInterval(() => {
+        if (geminiWs.readyState === WebSocket.OPEN) {
+            geminiWs.ping();
         }
+    }, 20000);
 
-        if (msg.setupComplete) {
-            geminiReady = true;
+    geminiWs.on('close', () => clearInterval(keepAliveInterval));
+};
 
-            // saludo inicial
-            geminiWs.send(JSON.stringify({
-                realtimeInput: {
-                    text: "Hola, acabo de llamar. Hazme un saludo corto de bienvenida."
-                }
-            }));
-        }
+/* ---------------- Gemini OPEN ---------------- */
 
-        if (msg.serverContent?.modelTurn?.parts) {
-            for (const part of msg.serverContent.modelTurn.parts) {
+geminiWs.on('open', () => {
+    console.log('🤖 Conexión con Gemini abierta');
+    geminiWsOpen = true;
+    initializeGemini();
+});
 
-                if (part.inlineData?.data && streamSid) {
-                    const pcm24k = Buffer.from(part.inlineData.data, 'base64');
+/* ---------------- Gemini MESSAGE ---------------- */
 
-                    // ↓ convertimos a 8k para Twilio (24kHz a 8kHz)
-                    const pcm8k = downsample24kTo8k(pcm24k);
-                    const mulaw = pcm16ToMulaw(pcm8k);
+geminiWs.on('message', (data) => {
+    const msg = JSON.parse(data.toString());
 
-                    ws.send(JSON.stringify({
-                        event: 'media',
-                        streamSid,
-                        media: { payload: mulaw.toString('base64') }
-                    }));
-                }
+    // LOG detallado (ignorando fragmentos de audio para no inundar la consola)
+    if (!msg.serverContent?.modelTurn?.parts?.[0]?.inlineData) {
+        console.log('\n[DEBUG Gemini API]:', JSON.stringify(msg, null, 2));
+    }
+
+    if (msg.setupComplete) {
+        geminiReady = true;
+
+        // saludo inicial
+        // saludo inicial
+        geminiWs.send(JSON.stringify({
+            clientContent: {
+                turns: [{
+                    role: "user",
+                    parts: [{ text: "Hola, acabo de llamar. Hazme un saludo corto de bienvenida." }]
+                }],
+                turnComplete: true
             }
-        }
+        }));
+    }
 
-        // INTERCEPTAR LLAMADAS A HERRAMIENTAS (TOOL CALLS)
-        if (msg.toolCall) {
-            console.log('🛠️ [TOOL CALL] Gemini solicitó:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
+    if (msg.serverContent?.modelTurn?.parts) {
+        for (const part of msg.serverContent.modelTurn.parts) {
 
-            (async () => {
-                const functionCalls = msg.toolCall.functionCalls;
+            if (part.inlineData?.data && streamSid) {
+                const pcm24k = Buffer.from(part.inlineData.data, 'base64');
 
-                // Mapeamos las llamadas a un array de promesas concurrentes
-                const promises = functionCalls.map(async (call) => {
-                    const args = call.args;
-                    let dataParaGemini = { status: "error", message: "Timeout o fallo en el servidor" };
+                // ↓ convertimos a 8k para Twilio (24kHz a 8kHz)
+                const pcm8k = downsample24kTo8k(pcm24k);
+                const mulaw = pcm16ToMulaw(pcm8k);
 
-                    // AbortController para evitar que Gemini se quede colgado si n8n tarda > 5 segundos
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                    try {
-                        let webhookUrl = '';
-                        if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
-                        else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/retell_reservas';
-                        else if (call.name === 'transfer_call') webhookUrl = 'https://n8n.ruedia.space/webhook/transferir-llamada';
-
-                        if (webhookUrl) {
-                            const res = await fetch(webhookUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(args),
-                                signal: controller.signal
-                            });
-                            const raw = await res.text();
-                            // Try to parse JSON; if it fails we keep the raw text
-                            let parsed;
-                            try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
-                            if (call.name === 'checkAvailability') {
-                                console.log('🛠️ checkAvailability called with args:', args);
-                                // Normalise response for Gemini
-                                dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
-                            } else {
-                                dataParaGemini = { respuestaN8N: raw };
-                            }
-                        }
-                    } catch (e) {
-                        console.error(`❌ Error en n8n para ${call.name}: `, e.message);
-                    } finally {
-                        clearTimeout(timeoutId);
-                    }
-
-                    return { id: call.id, name: call.name, response: { result: dataParaGemini } };
-                });
-
-                // Ejecutar todas las llamadas a n8n al mismo tiempo
-                const functionResponses = await Promise.all(promises);
-
-                if (functionResponses.length > 0) {
-                    geminiWs.send(JSON.stringify({
-                        toolResponse: { functionResponses: functionResponses }
-                    }));
-                }
-            })();
-        }
-    });
-
-    /* ---------------- Twilio → Gemini ---------------- */
-
-    ws.on('message', (message) => {
-        const msg = JSON.parse(message);
-
-        if (msg.event === 'start') {
-            streamSid = msg.start.streamSid;
-
-            // Si no llegó por URL, intentamos capturarlo por parámetros
-            if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
-                callerNumber = msg.start.customParameters.callerNumber;
-            }
-
-            console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
-            console.log(`📞 Llamada iniciada en Madrid: SID = ${streamSid}, Número = ${callerNumber}`);
-
-            twilioStartReceived = true;
-            initializeGemini();
-        }
-
-        if (msg.event === 'media' && geminiReady) {
-            const mulaw = Buffer.from(msg.media.payload, 'base64');
-
-            // μ-law → PCM 8k
-            const pcm8k = mulawToPcm16(mulaw);
-
-            // 8k → 16k REAL
-            const pcm16k = upsample8kTo16k(pcm8k);
-
-            // buffering (~100ms)
-            audioBuffer.push(pcm16k);
-
-            if (audioBuffer.length >= 5) {
-                const combined = Buffer.concat(audioBuffer);
-                audioBuffer = [];
-
-                geminiWs.send(JSON.stringify({
-                    realtimeInput: {
-                        audio: {
-                            mimeType: "audio/pcm;rate=16000",
-                            data: combined.toString('base64')
-                        }
-                    }
+                ws.send(JSON.stringify({
+                    event: 'media',
+                    streamSid,
+                    media: { payload: mulaw.toString('base64') }
                 }));
             }
         }
-    });
+    }
 
-    /* ---------------- CLEANUP ---------------- */
+    // INTERCEPTAR LLAMADAS A HERRAMIENTAS (TOOL CALLS)
+    if (msg.toolCall) {
+        console.log('🛠️ [TOOL CALL] Gemini solicitó:', JSON.stringify(msg.toolCall.functionCalls, null, 2));
 
-    ws.on('close', () => {
-        console.log('📴 Llamada terminada');
-        geminiWs.close();
-    });
+        (async () => {
+            const functionCalls = msg.toolCall.functionCalls;
 
-    geminiWs.on('close', () => {
-        console.log('🔌 Gemini desconectado');
-    });
+            // Mapeamos las llamadas a un array de promesas concurrentes
+            const promises = functionCalls.map(async (call) => {
+                const args = call.args;
+                let dataParaGemini = { status: "error", message: "Timeout o fallo en el servidor" };
 
-    geminiWs.on('error', (e) => {
-        console.error('❌ Gemini error:', e);
-    });
+                // AbortController para evitar que Gemini se quede colgado si n8n tarda > 5 segundos
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                try {
+                    let webhookUrl = '';
+                    if (call.name === 'identificarCliente') webhookUrl = 'https://n8n.ruedia.space/webhook/identificador_cliente';
+                    else if (call.name === 'checkAvailability') webhookUrl = 'https://n8n.ruedia.space/webhook/retell_reservas';
+                    else if (call.name === 'transfer_call') webhookUrl = 'https://n8n.ruedia.space/webhook/transferir-llamada';
+
+                    if (webhookUrl) {
+                        const res = await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(args),
+                            signal: controller.signal
+                        });
+                        const raw = await res.text();
+                        // Try to parse JSON; if it fails we keep the raw text
+                        let parsed;
+                        try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
+                        if (call.name === 'checkAvailability') {
+                            console.log('🛠️ checkAvailability called with args:', args);
+                            // Normalise response for Gemini
+                            dataParaGemini = parsed ? parsed : { status: 'ok', message: raw };
+                        } else {
+                            dataParaGemini = { respuestaN8N: raw };
+                        }
+                    }
+                } catch (e) {
+                    console.error(`❌ Error en n8n para ${call.name}: `, e.message);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+
+                return { id: call.id, name: call.name, response: { result: dataParaGemini } };
+            });
+
+            // Ejecutar todas las llamadas a n8n al mismo tiempo
+            const functionResponses = await Promise.all(promises);
+
+            if (functionResponses.length > 0) {
+                geminiWs.send(JSON.stringify({
+                    toolResponse: { functionResponses: functionResponses }
+                }));
+            }
+        })();
+    }
+});
+
+/* ---------------- Twilio → Gemini ---------------- */
+
+ws.on('message', (message) => {
+    const msg = JSON.parse(message);
+
+    if (msg.event === 'start') {
+        streamSid = msg.start.streamSid;
+
+        // Si no llegó por URL, intentamos capturarlo por parámetros
+        if (callerNumber === 'número desconocido' && msg.start.customParameters?.callerNumber) {
+            callerNumber = msg.start.customParameters.callerNumber;
+        }
+
+        console.log('📦 DATOS DE INICIO (Twilio):', JSON.stringify(msg.start, null, 2));
+        console.log(`📞 Llamada iniciada en Madrid: SID = ${streamSid}, Número = ${callerNumber}`);
+
+        twilioStartReceived = true;
+        initializeGemini();
+    }
+
+    if (msg.event === 'media' && geminiReady) {
+        const mulaw = Buffer.from(msg.media.payload, 'base64');
+
+        // μ-law → PCM 8k
+        const pcm8k = mulawToPcm16(mulaw);
+
+        // 8k → 16k REAL
+        const pcm16k = upsample8kTo16k(pcm8k);
+
+        // buffering (~100ms)
+        audioBuffer.push(pcm16k);
+
+        if (audioBuffer.length >= 5) {
+            const combined = Buffer.concat(audioBuffer);
+            audioBuffer = [];
+
+            geminiWs.send(JSON.stringify({
+                realtimeInput: {
+                    audio: {
+                        mimeType: "audio/pcm;rate=16000",
+                        data: combined.toString('base64')
+                    }
+                }
+            }));
+        }
+    }
+});
+
+/* ---------------- CLEANUP ---------------- */
+
+ws.on('close', () => {
+    console.log('📴 Llamada terminada');
+    geminiWs.close();
+});
+
+geminiWs.on('close', () => {
+    console.log('🔌 Gemini desconectado');
+});
+
+geminiWs.on('error', (e) => {
+    console.error('❌ Gemini error:', e);
+});
 });
 
 /* ========================================================= */
